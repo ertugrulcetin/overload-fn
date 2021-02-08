@@ -1,6 +1,13 @@
 (ns overload-fn.core
   (:refer-clojure :exclude [defn])
-  (:require [clojure.string :as str]))
+  (:require
+   [clojure.string :as str]
+   [clojure.spec.alpha :as s]))
+
+
+(s/check-asserts true)
+
+(s/def ::distinct (partial apply distinct?))
 
 
 (defn- use-protocol? [types]
@@ -13,75 +20,56 @@
                 args))) types))))
 
 
+(defn- create-protocol-name [name]
+  (format "I%sProtocol" (->> name
+                             str
+                             (re-seq #"[a-zA-Z]+")
+                             (map str/capitalize)
+                             (str/join))))
+
+
 (defmacro defn
   [name & body]
-  ;;TODO checks
   (let [types (map (comp (partial mapv (comp :tag meta))
                          first) body)]
+    (s/assert ::distinct types)
     (if (use-protocol? types)
-      ;;TODO camelCase | my-add -> IMy-addProtocol
-      (let [protocol-name (symbol (str "I" (str/capitalize name) "Protocol"))]
+      (let [protocol (symbol (create-protocol-name name))]
         `(do
-           (defprotocol ~protocol-name
+           (println "Using Protocols")
+           (when (and ~protocol (map? ~protocol))
+             (-reset-methods ~protocol)
+             (.unbindRoot (:var ~protocol)))
+           (defprotocol ~protocol
              (~name ~@(distinct
                        (map (fn [args]
                               (vec (cons 'this (rest args))))
                             (distinct (map first body))))))
-           (extend-protocol ~protocol-name
+           (extend-protocol ~protocol
              ~@(apply concat
                       (for [[k v] (group-by (comp :tag meta ffirst) body)]
                         (list k (cons name v)))))
            (def ~name)))
       `(do
+         (println "Using Multi-Methods")
          (let [v# (def ~name)]
            (when (bound? v#)
              (.unbindRoot v#)))
-         (defmulti ~name (fn [& args#] (mapv type args#)))
+         (defmulti ~name (fn [& args#] (mapv (fnil type Object) args#)))
          ~@(for [[args form] body]
-             `(defmethod ~name ~(mapv (comp :tag meta) args) ~args
+             `(defmethod ~name ~(mapv (fn [a#]
+                                        (or (-> a# meta :tag)
+                                            Object)) args) ~args
                 ~form))
          (def ~name)))))
 
-
 (comment
- (macroexpand-1 '(defno my-add2
-                        ([^Long x ^Double y]
-                         (println "Long - Double"))
-                        ([^Long x ^Float y]
-                         (println "Long - Float"))
-                        ([^String x ^String y]
-                         (println "string - string"))
-                        ([x y]
-                         (println "nil - nil"))))
- (defn my-add2
-       ([^Long x ^Double y]
-        (println "Long - Double"))
-       ([^Long x ^Float y]
-        (println "Long - Float"))
-       ([^String x ^String y]
-        (println "string - string"))
-       ([x y]
-        (println "nil - nil")))
- (my-add2 12 12.2)
- (my-add2 12 (float 12.2))
- (my-add2 nil nil)
- (my-add2 "ss" "asd")
-
- (macroexpand-1 '(defn mything
-                       ([^Double y]
-                        (println "Double"))
-                       ([^Float y]
-                        (println "Float"))
-                       ([y]
-                        (println "nil"))))
- (mything 12.2)
- (mything nil)
- (defprotocol IErtu (done [this]))
- (extend-protocol IErtu
-   Double
-   (done [this]))
- #'done
- (.unbindRoot v#)
- (bound? #'done)
- )
-
+ (macroexpand-1 '(defn my-multi-fn
+                       ([^Double x ^String y]
+                        :double-string)
+                       ([^Long x ^String y]
+                        :long-string)
+                       #_([^Object x ^String y]
+                          :any-type-string)
+                       ([x ^String y]
+                        :nil-string))))

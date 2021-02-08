@@ -12,22 +12,88 @@
              :long)
             ([^Object x]
              :any-type)
-            ([x] nil))
+            ([x]
+             :any-type))
    (is (= (my-fn 12.2) :double))
    (is (= (my-fn 12) :long))
    (is (= (my-fn :hey) :any-type))
-   (is (= (my-fn nil) nil)))
+   (is (= (my-fn nil) :any-type))
+   (is (= (my-fn {:a 1}) :any-type)))
 
-  (with-test
-   (of/defn add
-            ([^Double x y z]
-             (+ x y z))
-            ([^Long x y z]
-             (+ x y z 2)))
-   (is (= (add 0.5 1 1) 2.5))
-   (is (= (add 1 1 1) 5))))
+  #_(with-test
+     (of/defn my-fn-2
+              ([^Double x]
+               :double)
+              ([^Long x]
+               :long)
+              ([^Object x]
+               :any-type)
+              ([x]
+               nil))
+     (is (= (my-fn-2 12.2) :double))
+     (is (= (my-fn-2 12) :long))
+     (is (= (my-fn-2 :hey) :any-type))
+     (is (= (my-fn-2 {:a 1}) :any-type))
+     (is (= (my-fn-2 nil) nil)))
+
+  #_(with-test
+     (of/defn add
+              ([^Double x y z]
+               (+ x y z))
+              ([^Long x y z]
+               (+ x y z 2)))
+     (is (= (add 0.5 1 1) 2.5))
+     (is (= (add 1 1 1) 5))))
+
+
+#_(testing "multi-methods based overload"
+    (with-test
+     (of/defn my-multi-fn
+              ([^Double x ^String y]
+               :double-string)
+              ([^Long x ^String y]
+               :long-string)
+              ([^Object x ^String y]
+               :any-string)
+              ([x ^String y]
+               :any-string))
+     (is (= (my-multi-fn 12.2 "hey") :double-string))
+     (is (= (my-multi-fn 12 "hey") :long-string))
+     (is (= (my-multi-fn nil "hey") :any-string))
+     (is (= (my-multi-fn {:a 1} "hey") :any-string))
+     (is (= (my-multi-fn :dude "hey") :any-string)))
+
+    (with-test
+     (of/defn my-multi-fn-2
+              ([^Long x ^String y ^Long z]
+               [:long :str :long])
+              ([^Long x ^String y z]
+               [:long :str :any]))
+     (is (= (my-multi-fn-2 1 "hey" 2) [:long :str :long]))
+     (is (= (my-multi-fn-2 1 "hey" :dude) [:long :str :any]))
+     (is (= (my-multi-fn-2 1 "hey" {:a 1}) [:long :str :any]))
+     (is (= (my-multi-fn-2 1 "hey" nil) [:long :str :any]))))
+
 
 (run-tests)
+
 (comment
 
- )
+ (#'protocol? IErtusProtocol)
+ (of/defn ertus
+          ([^Double x]
+           :double)
+          ([^Long x]
+           :long)
+          ([^Object x]
+           :any-type))
+
+ (macroexpand-1 '(of/defn my-multi-fn
+                          ([^Double x ^String y]
+                           :double-string)
+                          ([^Long x ^String y]
+                           :long-string)
+                          #_([^Object x ^String y]
+                             :any-type-string)
+                          ([x ^String y]
+                           :nil-string))))
