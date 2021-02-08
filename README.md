@@ -5,6 +5,7 @@
 When working with Java libraries (especially writing wrappers), creating multiple protocols and multi-methods becomes daunting, so the library aims to solve this problem.
 
 ## Installation
+[![Clojars Project](https://clojars.org/overload-fn/latest-version.svg)](https://clojars.org/overload-fn)
 
 ## Usage
 ```clojure
