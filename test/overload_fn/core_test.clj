@@ -10,8 +10,6 @@
              :double)
             ([^Long x]
              :long)
-            ([^Object x]
-             :any-type)
             ([x]
              :any-type))
    (is (= (my-fn 12.2) :double))
@@ -20,23 +18,7 @@
    (is (= (my-fn nil) :any-type))
    (is (= (my-fn {:a 1}) :any-type)))
 
-  #_(with-test
-     (of/defn my-fn-2
-              ([^Double x]
-               :double)
-              ([^Long x]
-               :long)
-              ([^Object x]
-               :any-type)
-              ([x]
-               nil))
-     (is (= (my-fn-2 12.2) :double))
-     (is (= (my-fn-2 12) :long))
-     (is (= (my-fn-2 :hey) :any-type))
-     (is (= (my-fn-2 {:a 1}) :any-type))
-     (is (= (my-fn-2 nil) nil)))
-
-  #_(with-test
+  (with-test
      (of/defn add
               ([^Double x y z]
                (+ x y z))
@@ -46,7 +28,7 @@
      (is (= (add 1 1 1) 5))))
 
 
-#_(testing "multi-methods based overload"
+(testing "multi-methods based overload"
     (with-test
      (of/defn my-multi-fn
               ([^Double x ^String y]
@@ -67,15 +49,19 @@
      (of/defn my-multi-fn-2
               ([^Long x ^String y ^Long z]
                [:long :str :long])
+              ([^Long x ^String y ^Number z]
+               [:long :str :number])
               ([^Long x ^String y z]
                [:long :str :any]))
      (is (= (my-multi-fn-2 1 "hey" 2) [:long :str :long]))
+     (is (= (my-multi-fn-2 1 "hey" 5.5) [:long :str :number]))
      (is (= (my-multi-fn-2 1 "hey" :dude) [:long :str :any]))
      (is (= (my-multi-fn-2 1 "hey" {:a 1}) [:long :str :any]))
      (is (= (my-multi-fn-2 1 "hey" nil) [:long :str :any]))))
 
 
 (run-tests)
+
 
 (comment
 
@@ -88,12 +74,10 @@
           ([^Object x]
            :any-type))
 
- (macroexpand-1 '(of/defn my-multi-fn
-                          ([^Double x ^String y]
-                           :double-string)
-                          ([^Long x ^String y]
-                           :long-string)
-                          #_([^Object x ^String y]
-                             :any-type-string)
-                          ([x ^String y]
-                           :nil-string))))
+ (macroexpand-1 '(of/defn my-fn
+                          ([^Double x]
+                           :double)
+                          ([^Long x]
+                           :long)
+                          ([x]
+                           :any-type))))

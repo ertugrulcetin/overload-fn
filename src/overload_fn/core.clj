@@ -36,10 +36,10 @@
     (if (use-protocol? types)
       (let [protocol (symbol (create-protocol-name name))]
         `(do
-           (println "Using Protocols")
-           (when (and ~protocol (map? ~protocol))
-             (-reset-methods ~protocol)
-             (.unbindRoot (:var ~protocol)))
+           (when-let [protocol# (resolve '~protocol)]
+             (when (bound? protocol#)
+               (-reset-methods @protocol#)
+               (.unbindRoot (:var @protocol#))))
            (defprotocol ~protocol
              (~name ~@(distinct
                        (map (fn [args]
@@ -47,11 +47,14 @@
                             (distinct (map first body))))))
            (extend-protocol ~protocol
              ~@(apply concat
-                      (for [[k v] (group-by (comp :tag meta ffirst) body)]
+                      (for [[k v] (let [mapping# (group-by (comp :tag meta ffirst) body)]
+                                    ;; Unify Object and nil
+                                    (cond-> mapping#
+                                            (get mapping# nil) (assoc Object (get mapping# nil))
+                                            (get mapping# 'Object) (assoc nil (get mapping# 'Object))))]
                         (list k (cons name v)))))
            (def ~name)))
       `(do
-         (println "Using Multi-Methods")
          (let [v# (def ~name)]
            (when (bound? v#)
              (.unbindRoot v#)))
@@ -62,14 +65,3 @@
                                             Object)) args) ~args
                 ~form))
          (def ~name)))))
-
-(comment
- (macroexpand-1 '(defn my-multi-fn
-                       ([^Double x ^String y]
-                        :double-string)
-                       ([^Long x ^String y]
-                        :long-string)
-                       #_([^Object x ^String y]
-                          :any-type-string)
-                       ([x ^String y]
-                        :nil-string))))
