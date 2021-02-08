@@ -2,7 +2,9 @@
   (:refer-clojure :exclude [defn])
   (:require
    [clojure.string :as str]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s])
+  (:import
+   (clojure.lang Var)))
 
 
 (s/check-asserts true)
@@ -39,7 +41,7 @@
            (when-let [protocol# (resolve '~protocol)]
              (when (bound? protocol#)
                (-reset-methods @protocol#)
-               (.unbindRoot (:var @protocol#))))
+               (.unbindRoot ^Var (:var @protocol#))))
            (defprotocol ~protocol
              (~name ~@(distinct
                        (map (fn [args]
