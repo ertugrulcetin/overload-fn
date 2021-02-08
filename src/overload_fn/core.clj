@@ -1,8 +1,9 @@
 (ns overload-fn.core
+  (:refer-clojure :exclude [defn])
   (:require [clojure.string :as str]))
 
 
-(defn use-protocol? [types]
+(defn- use-protocol? [types]
   (not
    (boolean
     (some (fn [args]
@@ -12,7 +13,7 @@
                 args))) types))))
 
 
-(defmacro defno
+(defmacro defn
   [name & body]
   ;;TODO checks
   (let [types (map (comp (partial mapv (comp :tag meta))
@@ -29,17 +30,18 @@
            (extend-protocol ~protocol-name
              ~@(apply concat
                       (for [[k v] (group-by (comp :tag meta ffirst) body)]
-                        (list k (cons name v)))))))
+                        (list k (cons name v)))))
+           (def ~name)))
       `(do
-         (println "Using multi-methods")
          (let [v# (def ~name)]
            (when (bound? v#)
-             (println "removing bind")
              (.unbindRoot v#)))
          (defmulti ~name (fn [& args#] (mapv type args#)))
          ~@(for [[args form] body]
              `(defmethod ~name ~(mapv (comp :tag meta) args) ~args
-                ~form))))))
+                ~form))
+         (def ~name)))))
+
 
 (comment
  (macroexpand-1 '(defno my-add2
@@ -51,27 +53,35 @@
                          (println "string - string"))
                         ([x y]
                          (println "nil - nil"))))
- (defno my-add2
-        ([^Long x ^Double y]
-         (println "Long - Double"))
-        ([^Long x ^Float y]
-         (println "Long - Float"))
-        ([^String x ^String y]
-         (println "string - string"))
-        ([x y]
-         (println "nil - nil")))
+ (defn my-add2
+       ([^Long x ^Double y]
+        (println "Long - Double"))
+       ([^Long x ^Float y]
+        (println "Long - Float"))
+       ([^String x ^String y]
+        (println "string - string"))
+       ([x y]
+        (println "nil - nil")))
  (my-add2 12 12.2)
  (my-add2 12 (float 12.2))
  (my-add2 nil nil)
  (my-add2 "ss" "asd")
 
- (macroexpand-1 '(defno mything
-                        ([^Double y]
-                         (println "Double"))
-                        ([^Float y]
-                         (println "Float"))
-                        ([y]
-                         (println "nil"))))
+ (macroexpand-1 '(defn mything
+                       ([^Double y]
+                        (println "Double"))
+                       ([^Float y]
+                        (println "Float"))
+                       ([y]
+                        (println "nil"))))
+ (mything 12.2)
  (mything nil)
+ (defprotocol IErtu (done [this]))
+ (extend-protocol IErtu
+   Double
+   (done [this]))
+ #'done
+ (.unbindRoot v#)
+ (bound? #'done)
  )
 
