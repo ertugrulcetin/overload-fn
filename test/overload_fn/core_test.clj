@@ -58,26 +58,3 @@
      (is (= (my-multi-fn-2 1 "hey" :dude) [:long :str :any]))
      (is (= (my-multi-fn-2 1 "hey" {:a 1}) [:long :str :any]))
      (is (= (my-multi-fn-2 1 "hey" nil) [:long :str :any]))))
-
-
-(run-tests)
-
-
-(comment
-
- (#'protocol? IErtusProtocol)
- (of/defn ertus
-          ([^Double x]
-           :double)
-          ([^Long x]
-           :long)
-          ([^Object x]
-           :any-type))
-
- (macroexpand-1 '(of/defn my-fn
-                          ([^Double x]
-                           :double)
-                          ([^Long x]
-                           :long)
-                          ([x]
-                           :any-type))))
