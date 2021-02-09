@@ -1,6 +1,6 @@
 # overload-fn
 
-**overload-fn** is a Clojure library that makes possible function overloading on type. Since Clojure doesn't support function overloading based on type hints, you need to either create a **protocol** or **multi-method**. This is where the library comes into play. Based on your overloaded function declaration, overload-fn chooses protocol or multi-method to implement overloading functionality.
+**overload-fn** is a tiny Clojure library that makes possible function overloading on type. Since Clojure doesn't support function overloading based on type hints, you need to either create a **protocol** or **multi-method**. This is where the library comes into play. Based on your overloaded function declaration, overload-fn chooses protocol or multi-method to implement overloading functionality.
 
 When working with Java libraries (especially writing wrappers), creating multiple protocols and multi-methods becomes daunting, so the library aims to solve this problem.
 
