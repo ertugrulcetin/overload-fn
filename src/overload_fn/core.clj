@@ -40,7 +40,6 @@
         `(do
            (when-let [protocol# (resolve '~protocol)]
              (when (bound? protocol#)
-               (-reset-methods @protocol#)
                (.unbindRoot ^Var (:var @protocol#))))
            (defprotocol ~protocol
              (~name ~@(distinct
@@ -60,7 +59,8 @@
          (let [v# (def ~name)]
            (when (bound? v#)
              (.unbindRoot v#)))
-         (defmulti ~name (fn [& args#] (mapv (fnil type Object) args#)))
+         (let [->class# (fnil class Object)]
+           (defmulti ~name (fn [& args#] (mapv ->class# args#))))
          ~@(for [[args form] body]
              `(defmethod ~name ~(mapv (fn [a#]
                                         (or (-> a# meta :tag)

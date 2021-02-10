@@ -1,4 +1,4 @@
-(defproject overload-fn "0.1.0"
+(defproject overload-fn "0.1.10"
 
   :description "Function overloading on type for Clojure"
 
